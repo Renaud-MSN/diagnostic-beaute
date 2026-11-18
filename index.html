@@ -47,6 +47,8 @@ a.lk{color:var(--t);cursor:pointer;text-decoration:underline;font-size:15px}
 
 <main id="app"></main>
 <script src="catalogue.js"></script>
+<script src="conseil.js"></script>
+<script src="moteur.js"></script>
 <script>
 /* ===== Configuration du questionnaire (données, pas de logique métier cachée) =====
    Seules les questions au statut « Proposé » de l'étape 5 sont actives.
@@ -101,7 +103,8 @@ let S={mode:null,etape:'accueil',i:0,consent:false,consentCom:false,
   declare:{},precisions:{},observationsPro:{},modifications:[],
   catalogue:{genere:CATALOGUE_META.genere,nbProduits:CATALOGUE_META.nbProduits},
   moteur:{statut:'non disponible — conseils produit non validés',propositions:[]},
-  id:null,debut:null,client:{nom:'',contact:''}};
+  id:null,debut:null,client:{nom:'',contact:''},retires:[]};
+const TEST=/[?&]test=1/.test(location.search);
 const $=s=>document.querySelector(s),app=$('#app');
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 /* ===== Stockage local (IndexedDB), comme l'application olfactive : par appareil, rien n'est envoyé ===== */
@@ -183,22 +186,58 @@ function set(key,v,q){
    S.modifications.push({question:key,avant:before,apres:v,date:new Date().toISOString(),accordClient:null});
  S.declare[key]=v;
 }
+function carte(p,u,etape,niveau){
+ const ind=!p.disponible?'<span class="tag" style="background:#9a3b2e">Indisponible</span> ':'';
+ return `<div class="bloc" style="display:flex;gap:14px"><div style="flex:none;width:30px;height:30px;border-radius:50%;background:var(--t);color:#fff;text-align:center;line-height:30px">${etape}</div><img src="${esc(p.image)}" alt="" style="width:96px;height:96px;object-fit:cover;border-radius:10px;flex:none" onerror="this.style.display='none'">
+ <div>${ind}<span class="tag${niveau==='essentiel'?'':' m'}">${niveau==='essentiel'?'Essentiel':'Complémentaire'}</span> <b>${esc(p.titre)}</b><br><span class="note">${esc(p.marque)} · ${esc(p.prix)} €${p.role?' · '+esc(p.role):''}</span>
+ <p style="margin:6px 0 4px;font-size:16px">${p.principal?'Répond à votre priorité principale « '+esc(u.principal)+' ».':'Répond à : '+esc(p.secondaires.join(', '))+'.'}</p>
+ ${p.usage?`<p class="note" style="margin:0">${esc(p.usage)}</p>`:''}
+ ${p.typesDePeau?`<p class="note noprint" style="margin:4px 0 0">Types de peau (selon la marque) : ${esc(p.typesDePeau)}</p>`:''}
+ ${p.precautions?`<p class="note" style="margin:4px 0 0">Précautions : ${esc(p.precautions)}</p>`:''}
+ <p class="note" style="margin:4px 0 0">${esc(p.compatibilite)}${TEST&&p.statutsDonnees.preoccupations!=='Validé'?' · <b>donnée '+esc(p.statutsDonnees.preoccupations)+'</b>':''}</p>
+ <p class="noprint" style="margin:6px 0 0">${p.url?`<a class="lk" href="${esc(p.url)}" target="_blank" rel="noopener">Voir la fiche</a> · `:''}<a class="lk" data-rm="${p.id}">Retirer de la proposition</a></p></div></div>`}
+function profil(){
+ const d=S.declare,L=[];
+ if(d.A1)L.push(['Univers explorés',d.A1.join(', ')]);
+ if(d.C1)L.push(['Type de peau déclaré',d.C1]);
+ if(d.C3)L.push(['Sensibilité habituelle',d.C3]);
+ if(d.C4)L.push(['État de la peau en ce moment',d.C4.join(', ')]);
+ for(const [k,l] of [['D1','Priorité principale (visage)'],['D3','Priorité principale (corps)'],['D6','Priorité principale (mains)'],['D8','Priorité principale (bucco-dentaire)']]) if(d[k])L.push([l,d[k]]);
+ for(const [k,l] of [['D2','Autres besoins (visage)'],['D4','Autres besoins (corps)'],['D7','Autres besoins (mains)'],['D9','Autres attentes (bucco-dentaire)']]) if(d[k]&&d[k].length)L.push([l,d[k].join(', ')]);
+ return `<div class="bloc"><span class="tag">Votre profil beauté</span><table>${L.map(x=>`<tr><td>${esc(x[0])}</td><td><b>${esc(x[1])}</b></td></tr>`).join('')}</table></div>`}
+function blocReco(){
+ const m=S.moteur;if(!m||!m.univers)return'';
+  return m.univers.map(u=>{
+  const ess=u.essentiels.filter(p=>!S.retires.includes(p.id)),cmp=u.complementaires.filter(p=>!S.retires.includes(p.id));
+  const routine=u.routine.map(x=>{const p=ess.concat(cmp).find(q=>q.id===x.id);return p?{p,niveau:x.niveau}:null}).filter(Boolean);
+  return `<div class="bloc"><span class="tag">${esc(u.univers)}</span>${u.principal?`<p class="note">Priorité principale : ${esc(u.principal)}${u.secondaires.length?' · Autres : '+esc(u.secondaires.join(', ')):''}</p>`:''}
+  ${routine.length?'<h2 style="font-size:19px">Votre routine, dans l’ordre d’application</h2>'+routine.map((x,i)=>carte(x.p,u,i+1,x.niveau)).join(''):''}
+  ${u.note?`<p>${esc(u.note)}</p>`:''}
+  ${u.exclus.length?`<p class="note">${u.exclus.length} produit(s) écarté(s) pour incompatibilité avec vos allergies déclarées.</p>`:''}</div>`}).join('');
+}
 async function fin(){
- const rec=record();try{await DB.put(rec)}catch(e){}
+ if(!S.moteur||!S.moteur.univers) S.moteur=MOTEUR.recommander(S.declare,S.precisions,{test:TEST,brouillons:false,catalogue:CATALOGUE,conseil:CONSEIL});
+ try{await DB.put(record())}catch(e){}
+ draw();
+}
+function draw(){
  const P=parcours(S.declare);
  const lignes=P.map(it=>{const v=S.declare[it.key];const t=it.q.t+(it.q.parU?` (${UNIVERS.find(x=>x.id===it.u).l})`:'');
    return`<tr><td>${esc(t)}</td><td>${esc(Array.isArray(v)?v.join(', '):(v||'—'))}${S.precisions[it.key]?`<br><span class="note">Précisé : ${esc(S.precisions[it.key])}</span>`:''}</td></tr>`}).join('');
  const obs=Object.entries(S.observationsPro).filter(e=>e[1]);
  const g1=S.declare.G1;
- app.innerHTML=`<div style="text-align:center"><img src="logo.png" alt="Maison Diaphane – Diagnostic Beauté" style="width:170px"></div><h1>Votre diagnostic beauté</h1><p class="sub">${esc(S.client.nom)} · ${new Date(S.debut).toLocaleDateString('fr-FR')} · Diagnostic Beauté</p>
+ app.innerHTML=`${TEST?'<p class="err noprint"><b>MODE TEST</b> : les données « À confirmer » sont utilisées et signalées. Ne pas remettre ce résultat à une cliente.</p>':''}
+ <div style="text-align:center"><img src="logo.png" alt="Maison Diaphane – Diagnostic Beauté" style="width:170px"></div><h1>Votre diagnostic beauté</h1><p class="sub">${esc(S.client.nom)} · ${new Date(S.debut).toLocaleDateString('fr-FR')}</p>
+ ${profil()}
  <div class="bloc"><span class="tag">Réponses déclarées</span><table>${lignes}</table></div>
  <div class="bloc"><span class="tag m">Allergies et précautions</span><p>Allergies ou intolérances : <b>${esc(g1||'non renseigné')}</b>${S.precisions.G1?' — '+esc(S.precisions.G1):''}.<br><span class="note">Une composition absente ou incomplète n’est jamais présentée comme compatible.</span></p></div>
- <div class="bloc"><span class="tag m">Produits et routine</span><p>Les recommandations de produits et la routine seront proposées lorsque les conseils par produit auront été validés par Marie-Sophie. Aucune recommandation n’est générée à ce stade.</p><p class="note">Catalogue de référence : ${CATALOGUE_META.nbProduits} produits, lu le ${esc(CATALOGUE_META.genere)}.</p></div>
- <div class="bloc noprint"><span class="tag p">Notes complémentaires (usage interne, hors PDF)</span>${obs.length?'<table>'+obs.map(e=>`<tr><td>${esc(e[0])}</td><td>${esc(e[1])}</td></tr>`).join('')+'</table>':'<p class="note">Aucune.</p>'}${S.modifications.length?`<p class="note">${S.modifications.length} modification(s) de réponse enregistrée(s).</p>`:''}</div>
- <p class="note">Enregistré sur cet appareil. Ce diagnostic ne constitue pas un avis médical.</p>
+ ${blocReco()}
+ <p class="note">Catalogue de référence : ${CATALOGUE_META.nbProduits} produits, lu le ${esc(CATALOGUE_META.genere)}. Ce diagnostic ne constitue pas un avis médical. Enregistré sur cet appareil.</p>
+ <div class="bloc noprint"><span class="tag p">Notes complémentaires (usage interne, hors PDF)</span>${obs.length?'<table>'+obs.map(e=>`<tr><td>${esc(e[0])}</td><td>${esc(e[1])}</td></tr>`).join('')+'</table>':'<p class="note">Aucune.</p>'}${S.modifications.length?`<p class="note">${S.modifications.length} modification(s) enregistrée(s).</p>`:''}</div>
  <div class="foot noprint"><button class="btn" id="pdf">Enregistrer en PDF</button> <button class="btn sec" id="nw">Nouveau diagnostic</button></div>`;
  $('#pdf').onclick=()=>window.print();
- $('#nw').onclick=()=>{S={...S,mode:null,etape:'accueil',i:0,declare:{},precisions:{},observationsPro:{},modifications:[],client:{nom:'',contact:''},id:null};render()};
+ document.querySelectorAll('[data-rm]').forEach(a=>a.onclick=async()=>{S.retires.push(a.dataset.rm);S.modifications.push({type:'retrait',produit:a.dataset.rm,date:new Date().toISOString()});try{await DB.put(record())}catch(e){}draw()});
+ $('#nw').onclick=()=>{S={...S,mode:null,etape:'accueil',i:0,declare:{},precisions:{},observationsPro:{},modifications:[],client:{nom:'',contact:''},id:null,retires:[],moteur:{statut:'non calculé',propositions:[]}};render()};
 }
 async function trace(){
  const all=(await DB.all()).sort((a,b)=>b.fin.localeCompare(a.fin));
