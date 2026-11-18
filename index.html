@@ -77,6 +77,12 @@ const PREOC={
  corps:['Nutrition','Manque de confort','Rugosités','Exfoliation','Fermeté','Entretien quotidien','Soins selon les zones'],
  mains:['Protection','Rugosités','Entretien des ongles','Soin des cuticules','Confort quotidien','Sécheresse','Déshydratation','Nutrition'],
  bucco:['Hygiène quotidienne','Fraîcheur de l’haleine','Sensibilité dentaire','Confort des gencives','Entretien buccal']};
+/* Masquage automatique : un choix n'est proposé que si au moins un produit actif y est rattaché (statut Validé). */
+(function(){const NU={visage:'Visage',corps:'Corps',mains:'Mains',bucco:'Bucco-dentaire'};const n=x=>String(x).replace(/[’‘`]/g,"'").toLowerCase();
+ for(const u in PREOC){const ok=new Set();
+  for(const p of CATALOGUE){if(p.statut!=='ACTIVE')continue;const c=(CONSEIL[p.id]||{}).preoccupations||{};const cu=c[NU[u]];
+   if(cu&&cu.statut==='Validé')cu.valeur.forEach(v=>ok.add(n(v)));}
+  const f=PREOC[u].filter(v=>ok.has(n(v)));if(f.length)PREOC[u]=f;}})();
 const Q=[
  {id:'A1',bloc:'Univers',t:'Quels soins souhaitez-vous explorer ?',k:'multi',o:UNIVERS.map(u=>u.l).concat(['Tous']),req:true,aide:'Vous pouvez en choisir plusieurs. « Tous » sélectionne tous les univers.'},
  {id:'B2',bloc:'Habitudes',t:'Comment décririez-vous vos habitudes de soin actuellement ?',k:'single',o:['Je n’ai pas vraiment de routine','J’utilise quelques produits','J’ai une routine régulière','J’ai une routine déjà bien établie']},
