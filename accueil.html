@@ -1,46 +1,68 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Diagnostic Beauté Maison Diaphane</title>
-<meta name="description" content="Bienvenue chez Maison Diaphane. Un diagnostic beauté pour préparer votre routine de soins.">
-<meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Diagnostic Beauté">
-<meta name="theme-color" content="#6D6C4B">
-<link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="logo.png"><link rel="apple-touch-icon" href="apple-touch-icon.png">
-<meta property="og:type" content="website"><meta property="og:title" content="Diagnostic Beauté – Maison Diaphane">
-<meta property="og:description" content="Comprendre vos besoins et préparer votre routine de soins.">
-<meta property="og:image" content="https://renaud-msn.github.io/diagnostic-beaute/og.png"><meta property="og:url" content="https://renaud-msn.github.io/diagnostic-beaute/accueil.html">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Diagnostic Olfactif Maison Diaphane</title>
+<link rel="icon" href="icone-512.png" type="image/png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="accueil-manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Diagnostic Olfactif">
+<meta name="description" content="Bienvenue chez Maison Diaphane. Un diagnostic olfactif pour découvrir votre profil.">
 <style>
-:root{--t:#6D6C4B;--bg:#faf8f3;--tx:#2b2a22;--mu:#7a786a}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--tx);font-family:Georgia,'Times New Roman',serif;font-size:19px;line-height:1.65;text-align:center}
-main{max-width:720px;margin:0 auto;padding:22px 22px 40px}
-.logo{width:210px;max-width:60%}
-.acc{letter-spacing:.2em;text-transform:uppercase;font-size:13px;color:var(--t);margin:6px 0 18px}
-.ph{width:100%;border-radius:14px;display:block;margin:14px 0;aspect-ratio:3/2;object-fit:cover}
-h1{font-weight:normal;color:var(--t);font-size:32px;margin:22px 0 12px}
-p{margin:0 0 14px}
-.btn{display:inline-block;margin:18px 0 8px;padding:17px 34px;background:var(--t);color:#fff;border-radius:12px;text-decoration:none;font-size:20px}
-.note{font-size:14px;color:var(--mu)}
-.duo{display:grid;grid-template-columns:1fr 1fr;gap:12px}.duo .ph{margin:0}
-footer{margin-top:30px;font-size:14px;color:var(--mu);border-top:1px solid #d9d5c4;padding-top:16px}
+  :root { --ink:#1d1b19; --muted:#6b6660; --line:#dcd7cf; --bg:#faf8f5; --soft:#f1efeb; --accent:#1d1b19; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#1d1b19; --ink:#faf8f5; --muted:#c9c2b8; --line:#3d3934; --soft:#2a2724; --accent:#faf8f5; } }
+  :root[data-theme="dark"] { --bg:#1d1b19; --ink:#faf8f5; --muted:#c9c2b8; --line:#3d3934; --soft:#2a2724; --accent:#faf8f5; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; background:var(--bg); color:var(--ink); }
+  body { font-family:"Helvetica Neue", Helvetica, Arial, system-ui, sans-serif; line-height:1.6; font-size:17px; }
+  .wrap { max-width:720px; margin:0 auto; padding:0 16px; }
+  header { text-align:center; padding:36px 0 18px; }
+  .brand { font-size:14px; letter-spacing:.3em; text-transform:uppercase; margin:0; font-weight:500; }
+  .brand small { display:block; font-size:11px; letter-spacing:.2em; color:var(--muted); margin-top:4px; }
+  .brand-logo { display:block; width:min(230px,70%); height:auto; margin:0 auto; }
+  .brand-sub { text-align:center; margin:6px 0 0; font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); }
+  .hero { width:min(336px,100%); height:auto; aspect-ratio:4/3; object-fit:cover; display:block; border-radius:4px; margin:18px auto 0; }
+  main { padding:32px 0 8px; text-align:center; }
+  h1 { font-family:Georgia, "Times New Roman", serif; font-weight:400; font-size:34px; line-height:1.2; margin:0 0 18px; }
+  .accroche { font-family:Georgia, "Times New Roman", serif; font-style:italic; font-size:21px; line-height:1.5; color:var(--ink); margin:0 auto 22px; max-width:560px; }
+  .texte { color:var(--muted); max-width:580px; margin:0 auto 14px; }
+  .btn { display:inline-block; margin:26px 0 12px; background:#6D6C4B; color:#fffaf2; text-decoration:none; padding:15px 26px; border-radius:6px; font-size:15px; letter-spacing:.04em; }
+  .btn:focus-visible { outline:2px solid #6D6C4B; outline-offset:3px; }
+  .petit { font-size:13px; color:var(--muted); margin:0 auto 36px; max-width:520px; }
+  .gallery { display:flex; justify-content:center; flex-wrap:wrap; gap:8px; margin:8px 0 40px; }
+  .gallery img { width:min(336px,100%); height:auto; aspect-ratio:4/3; object-fit:cover; border-radius:4px; display:block; }
+  footer { border-top:1px solid var(--line); text-align:center; color:var(--muted); font-size:13px; padding:22px 0 36px; }
+  @media (max-width:600px) { h1 { font-size:28px; } .accroche { font-size:19px; } }
 </style>
 </head>
 <body>
-<main>
-<img class="logo" src="logo.png" alt="Maison Diaphane, diagnostic beauté">
-<div class="acc">Soins &amp; beauté · Angers</div>
-<img class="ph" style="aspect-ratio:auto;height:auto" src="https://cdn.shopify.com/s/files/1/0806/0361/1461/files/Etagere_Soins2_Maison_Diaphane.png?v=1791132685" alt="L’étagère des soins de la boutique Maison Diaphane" onerror="this.remove()">
-<h1>Bienvenue chez Maison Diaphane</h1>
-<p>Prenez le temps de répondre à votre rythme. Il n’y a ni bonne ni mauvaise réponse.</p>
-<p>Ce diagnostic dure quelques minutes. Il dessine le profil de vos besoins pour préparer votre routine de soins.</p>
-<p>Il ne remplace pas un avis médical, dentaire ou dermatologique. Marie-Sophie échange avec vous à la fin.</p>
-<a class="btn" href="index.html">Commencer le diagnostic</a>
-<p class="note">Vos réponses sont enregistrées uniquement sur cet appareil. Votre accord vous sera demandé avant de commencer.</p>
-<img class="ph" style="aspect-ratio:auto;height:auto" src="https://cdn.shopify.com/s/files/1/0806/0361/1461/files/produits-beaute-soins-exception-maison-diaphane.png?v=1779398156" alt="Les soins de beauté d’exception de la boutique Maison Diaphane" onerror="this.remove()">
-<img class="ph" style="aspect-ratio:auto;height:auto" src="https://cdn.shopify.com/s/files/1/0806/0361/1461/files/Etagere_Soins_Maison_Diaphane.png?v=1791132389" alt="Une étagère des soins de la boutique Maison Diaphane" onerror="this.remove()">
-<footer>11 rue des Lices, 49100 Angers · Tél. 02.41.09.15.70 · contact@maison-diaphane.com</footer>
-</main>
+<div class="wrap">
+  <header>
+    <img class="brand-logo" src="img/logo-maison-diaphane.png" alt="Maison Diaphane, diagnostic olfactif" width="230" height="330">
+    <p class="brand-sub">Parfumerie de niche · Angers</p>
+    <img class="hero" src="img/accueil-boutique-1.jpg" alt="Les arches lumineuses de la boutique Maison Diaphane, à Angers" width="1448" height="1086">
+  </header>
+
+  <main>
+    <h1>Bienvenue chez Maison Diaphane</h1>
+    <p class="accroche">Prenez votre temps. Il n’y a ni bonne ni mauvaise réponse, seulement vos souvenirs, vos envies et la façon dont vous sentez les choses.</p>
+    <p class="texte">Ce diagnostic olfactif vous accompagne pendant quelques minutes. Il dessine votre profil : les familles qui vous touchent, celles que vous préférez éviter, et la manière dont vous aimez porter un parfum.</p>
+    <p class="texte">Il ne recommande aucun parfum et aucune marque. Le conseil reste une rencontre : à la fin du diagnostic, Marie-Sophie prend le temps d’en parler avec vous.</p>
+
+    <a class="btn" href="index.html">Commencer le diagnostic</a>
+    <p class="petit">Vos informations sont traitées dans les conditions décrites à la fin du diagnostic.</p>
+
+    <div class="gallery">
+      <img src="img/accueil-boutique-2.jpg" alt="Un présentoir de la boutique Maison Diaphane, éclairé par des suspensions" width="1448" height="1086" loading="lazy">
+      <img src="img/accueil-boutique-3.jpg" alt="Les étagères éclairées de la boutique Maison Diaphane" width="1448" height="1086" loading="lazy">
+    </div>
+  </main>
+
+  <footer>
+    11 rue des Lices · 49100 Angers · Tél. 02.41.09.15.70 · contact@maison-diaphane.com
+  </footer>
+</div>
 </body>
 </html>
