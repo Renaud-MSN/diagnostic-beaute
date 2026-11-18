@@ -103,7 +103,7 @@ let S={mode:null,etape:'accueil',i:0,consent:false,consentCom:false,
   declare:{},precisions:{},observationsPro:{},modifications:[],
   catalogue:{genere:CATALOGUE_META.genere,nbProduits:CATALOGUE_META.nbProduits},
   moteur:{statut:'non disponible — conseils produit non validés',propositions:[]},
-  id:null,debut:null,client:{nom:'',contact:''},retires:[]};
+  id:null,debut:null,client:{prenom:'',nom:'',contact:''},retires:[]};
 const TEST=/[?&]test=1/.test(location.search);
 const $=s=>document.querySelector(s),app=$('#app');
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -138,8 +138,20 @@ function accueil(){
  $('#m1').onclick=()=>go('unique');$('#tr').onclick=()=>{S.etape='trace';render()};
 }
 function client(){
- app.innerHTML=`<h2>Pour retrouver votre diagnostic</h2><p class="sub">Facultatif : ces informations ne servent pas au conseil.</p>
- <p><input type="text" id="n" placeholder="Prénom et nom" value="${esc(S.client.nom)}"></p><p><input type="text" id="m" placeholder="Adresse e-mail" value="${esc(S.client.contact)}"></p>`+nav(()=>{S.etape='accueil';render()},()=>{S.client.nom=$('#n').value.trim();S.client.contact=$('#m').value.trim();S.etape='q';S.i=0;render()},true);
+ const nomC=c=>((c.prenom||'')+' '+(c.nom||'')).trim();
+ app.innerHTML=`<h2>Pour retrouver votre diagnostic</h2><p class="sub">Ces trois informations sont obligatoires pour continuer. Elles ne servent pas au conseil.</p>
+ <p><input type="text" id="p" placeholder="Prénom" autocomplete="given-name" value="${esc(S.client.prenom||'')}"></p>
+ <p><input type="text" id="n" placeholder="Nom" autocomplete="family-name" value="${esc(S.client.nom||'')}"></p>
+ <p><input type="email" id="m" placeholder="Adresse e-mail" autocomplete="email" inputmode="email" value="${esc(S.client.contact||'')}"></p><p id="e" class="err"></p>`
+ +nav(()=>{S.etape='accueil';render()},()=>{
+  const v=lire();if(!v.ok){$('#e').textContent=v.msg;return}
+  S.client.prenom=v.p;S.client.nom=v.n;S.client.contact=v.m;S.etape='q';S.i=0;render()},false);
+ const lire=()=>{const p=$('#p').value.trim(),n=$('#n').value.trim(),m=$('#m').value.trim();
+  const mailOk=/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(m);
+  let msg='';if(!p)msg='Veuillez renseigner le prénom.';else if(!n)msg='Veuillez renseigner le nom.';else if(!m)msg='Veuillez renseigner l’adresse e-mail.';else if(!mailOk)msg='L’adresse e-mail ne semble pas valide.';
+  return{ok:!msg,msg,p,n,m}};
+ const maj=()=>{const b=$('#nx');if(b)b.disabled=!lire().ok;$('#e').textContent=''};
+ ['#p','#n','#m'].forEach(id=>$(id).addEventListener('input',maj));maj();
 }
 function nav(back,next,ok,label){
  setTimeout(()=>{$('#bk').onclick=back;$('#nx').onclick=next},0);
@@ -227,7 +239,7 @@ function draw(){
  const obs=Object.entries(S.observationsPro).filter(e=>e[1]);
  const g1=S.declare.G1;
  app.innerHTML=`${TEST?'<p class="err noprint"><b>MODE TEST</b> : les données « À confirmer » sont utilisées et signalées. Ne pas remettre ce résultat à une cliente.</p>':''}
- <div style="text-align:center"><img src="logo.png" alt="Maison Diaphane – Diagnostic Beauté" style="width:170px"></div><h1>Votre diagnostic beauté</h1><p class="sub">${esc(S.client.nom)} · ${new Date(S.debut).toLocaleDateString('fr-FR')}</p>
+ <div style="text-align:center"><img src="logo.png" alt="Maison Diaphane – Diagnostic Beauté" style="width:170px"></div><h1>Votre diagnostic beauté</h1><p class="sub">${esc(((S.client.prenom||'')+' '+(S.client.nom||'')).trim())} · ${new Date(S.debut).toLocaleDateString('fr-FR')}</p>
  ${profil()}
  <div class="bloc"><span class="tag">Réponses déclarées</span><table>${lignes}</table></div>
  <div class="bloc"><span class="tag m">Allergies et précautions</span><p>Allergies ou intolérances : <b>${esc(g1||'non renseigné')}</b>${S.precisions.G1?' — '+esc(S.precisions.G1):''}.<br><span class="note">Une composition absente ou incomplète n’est jamais présentée comme compatible.</span></p></div>
@@ -237,11 +249,11 @@ function draw(){
  <div class="foot noprint"><button class="btn" id="pdf">Enregistrer en PDF</button> <button class="btn sec" id="nw">Nouveau diagnostic</button></div>`;
  $('#pdf').onclick=()=>window.print();
  document.querySelectorAll('[data-rm]').forEach(a=>a.onclick=async()=>{S.retires.push(a.dataset.rm);S.modifications.push({type:'retrait',produit:a.dataset.rm,date:new Date().toISOString()});try{await DB.put(record())}catch(e){}draw()});
- $('#nw').onclick=()=>{S={...S,mode:null,etape:'accueil',i:0,declare:{},precisions:{},observationsPro:{},modifications:[],client:{nom:'',contact:''},id:null,retires:[],moteur:{statut:'non calculé',propositions:[]}};render()};
+ $('#nw').onclick=()=>{S={...S,mode:null,etape:'accueil',i:0,declare:{},precisions:{},observationsPro:{},modifications:[],client:{prenom:'',nom:'',contact:''},id:null,retires:[],moteur:{statut:'non calculé',propositions:[]}};render()};
 }
 async function trace(){
  const all=(await DB.all()).sort((a,b)=>b.fin.localeCompare(a.fin));
- app.innerHTML=`<h2>Trace des diagnostics (cet appareil)</h2><table>${all.map(r=>`<tr><td>${new Date(r.fin).toLocaleString('fr-FR')}</td><td>${esc(r.client&&r.client.nom||'—')}</td><td>${r.mode}</td></tr>`).join('')||'<tr><td>Aucun.</td></tr>'}</table>
+ app.innerHTML=`<h2>Trace des diagnostics (cet appareil)</h2><table>${all.map(r=>`<tr><td>${new Date(r.fin).toLocaleString('fr-FR')}</td><td>${esc(r.client&&((r.client.prenom||'')+' '+(r.client.nom||'')).trim()||'—')}</td><td>${r.mode}</td></tr>`).join('')||'<tr><td>Aucun.</td></tr>'}</table>
  <div class="foot"><button class="btn sec" id="ex">Exporter la sauvegarde (JSON)</button> <button class="btn sec" id="bk2">Retour</button></div>`;
  $('#bk2').onclick=()=>{S.etape='accueil';render()};
  $('#ex').onclick=()=>{const b=new Blob([JSON.stringify(all,null,1)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='diagnostic-beaute-sauvegarde.json';a.click()};
