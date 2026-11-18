@@ -6,7 +6,7 @@ const MOTEUR=(function(){
  const norm=s=>(s==null?'':String(s)).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[’‘`]/g,"'").replace(/\s+/g,' ').trim();
  const UMAP={'Soin du Visage':'visage','Soin du Corps':'corps','Soin des Mains':'mains','Soins Bucco-dentaire':'bucco','Soin des Cheveux':'cheveux','Soin des Lèvres':'levres'};
  const SOUSCAT_EXCLUES=new Set(Object.keys(UMAP));
- const PARAM={maxEssentiels:4,maxComplementaires:2}; // décision Renaud 18/11/2026
+ const PARAM={maxEssentiels:3,maxComplementaires:1}; // décision Renaud 18/11/2026 : 3 essentiels + 1 complémentaire
  // Ordre d'application par rôle (sous-catégorie Shopify) — décision Renaud 18/11/2026 : « par rôle du produit » ; ordre à faire valider par Marie-Sophie.
  const ORDRE=['Nettoyant & démaquillant','Gel douche, gel de parfum & savon liquide','Savon, gel & solution lavante mains','Dentifrice','Tonique & eau florale','Sérum & huile visage','Sérum & huile corps','Sérum & gencives','Contour des yeux','Crème hydratante & anti-âge','Crème & lait corps','Crème & lait mains','Déodorant','Protection Solaire','Après Soleil','Rasage','Anti-cellulite & jambes','Gommage corps','Gommage & masque','Brosse à dents & accessoires','Outil de réflexologie'];
  function rang(p){const sc=sousCat(p);let m=99;for(const t of sc){const i=ORDRE.indexOf(t);if(i>=0&&i<m)m=i}return m}
