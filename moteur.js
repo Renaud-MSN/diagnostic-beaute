@@ -50,16 +50,23 @@ const MOTEUR=(function(){
     const hit=alle.filter(a=>ing.includes(a));
     if(hit.length){bloc.exclus.push({id:p.id,titre:p.titre,raison:'Ingrédient déclaré dans la composition : '+hit.join(', ')});continue}
     const acc=sc.some(t=>t==='Outil de réflexologie'||t==='Brosse à dents & accessoires');
-    cand.push({id:p.id,titre:p.titre,marque:p.marque,prix:p.prix,image:p.image,url:p.url,disponible:p.disponible,statutCatalogue:p.statut,
+    cand.push({id:p.id,titre:p.titre,marque:p.marque,prix:p.prix,image:p.image,url:p.url,disponible:(opt.live&&opt.live[p.id]!==undefined)?opt.live[p.id]:p.disponible,statutCatalogue:p.statut,
      role:sc.join(' · ')||null,principal:!!mp,secondaires:ms,accessoire:acc,
      usage:c&&utilisable(c.usage,test)?c.usage.valeur:null,
      compositionStatut:st,compatibilite:alle.length?(st==='complète'?'Aucun ingrédient déclaré trouvé dans la composition listée':'Compatibilité non vérifiée : composition incomplète'):'Allergies non déclarées',
      typesDePeau:c&&utilisable(c.typesDePeau,test)&&!/^aucun/i.test(c.typesDePeau.valeur)?c.typesDePeau.valeur:null,precautions:c&&utilisable(c.precautions,test)&&!/^(aucun|absent)/i.test(c.precautions.valeur)?c.precautions.valeur:null,statutsDonnees:{preoccupations:cu?cu.statut:'Inconnu'},score:(mp?3:0)+ms.length,rang:rang(p),typeCite:typeCite(declare.C1,c&&utilisable(c.typesDePeau,test)?c.typesDePeau.valeur:null)});
    }
    cand.sort((a,b)=>b.score-a.score||(b.typeCite-a.typeCite)||a.titre.localeCompare(b.titre));
-   const ess=cand.filter(x=>x.principal&&!x.accessoire).slice(0,PARAM.maxEssentiels);
-   const used=new Set(ess.map(x=>x.id));
-   const comp=cand.filter(x=>!used.has(x.id)).slice(0,PARAM.maxComplementaires);
+   // produit indisponible : remplacé par le suivant de même catégorie (même sous-catégorie Shopify) ; sans équivalent, l'étape disparaît
+   const dispo=x=>x.disponible!==false,memeRole=(x,y)=>!!(x.role&&y.role&&x.role.split(' · ').some(r=>y.role.split(' · ').includes(r)));
+   const ess0=cand.filter(x=>x.principal&&!x.accessoire).slice(0,PARAM.maxEssentiels);
+   const taken=new Set(ess0.map(x=>x.id));
+   const remp=(x,pool)=>{if(dispo(x))return x;const r=pool.find(y=>dispo(y)&&!taken.has(y.id)&&memeRole(x,y));if(r)taken.add(r.id);return r||null};
+   const ess=ess0.map(x=>remp(x,cand.filter(y=>y.principal&&!y.accessoire))).filter(Boolean);
+   const comp0=cand.filter(x=>!taken.has(x.id)).slice(0,PARAM.maxComplementaires);
+   comp0.forEach(x=>taken.add(x.id));
+   const comp=comp0.map(x=>remp(x,cand)).filter(Boolean);
+   bloc.candidats=cand.slice(0,14).map(x=>({id:x.id,url:x.url}));
    bloc.essentiels=ess;bloc.complementaires=comp;
    bloc.routine=ess.map(x=>({...x,niveau:'essentiel'})).concat(comp.map(x=>({...x,niveau:'complémentaire'}))).sort((a,b)=>a.rang-b.rang).map((x,i)=>({id:x.id,etape:i+1,niveau:x.niveau}));
    if(!ess.length&&!comp.length)bloc.note='Aucun produit du catalogue ne correspond suffisamment à vos réponses sur la base des informations disponibles.';

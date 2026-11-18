@@ -214,7 +214,7 @@ function set(key,v,q){
  S.declare[key]=v;
 }
 function carte(p,u,etape,niveau){
- const ind=!p.disponible?'<span class="tag" style="background:#9a3b2e">Indisponible</span> ':'';
+ const ind='';
  return `<div class="bloc carte" style="display:flex;gap:14px"><div style="flex:none;width:30px;height:30px;border-radius:50%;background:var(--t);color:#fff;text-align:center;line-height:30px">${etape}</div><img src="${esc(p.image)}" alt="" style="width:96px;height:96px;object-fit:cover;border-radius:10px;flex:none" onerror="this.style.display='none'">
  <div>${ind}<span class="tag${niveau==='essentiel'?'':' m'}">${niveau==='essentiel'?'Essentiel':'Complémentaire'}</span> <b>${esc(p.titre)}</b><br><span class="note">${esc(p.marque)} · ${esc(p.prix)} €${p.role?' · '+esc(p.role):''}</span>
  <p style="margin:6px 0 4px;font-size:16px">${p.principal?'Répond à votre priorité principale « '+esc(u.principal)+' ».':'Répond à : '+esc(p.secondaires.join(', '))+'.'}</p>
@@ -262,8 +262,22 @@ function blocReco(){
 }
 /* préoccupations : une seule question (jusqu'à 3 choix) ; le moteur reçoit le 1er choix = priorité principale, les suivants = secondaires */
 function pourMoteur(d){const c={...d};for(const [a,b] of [['D1','D2'],['D3','D4'],['D6','D7'],['D8','D9']]){const v=Array.isArray(d[a])?d[a]:(d[a]?[d[a]]:[]);if(v.length){c[a]=v[0];c[b]=v.slice(1)}}return c}
+async function stockDirect(cands){
+ const out={},seen=new Set();
+ await Promise.all(cands.filter(c=>c.url&&!seen.has(c.id)&&seen.add(c.id)).map(async c=>{
+  try{const ac=new AbortController(),t=setTimeout(()=>ac.abort(),4000);
+   const r=await fetch(c.url.replace(/[?#].*$/,'')+'.js',{signal:ac.signal});clearTimeout(t);
+   if(!r.ok)return;const j=await r.json();
+   if(typeof j.available==='boolean')out[c.id]=j.available}catch(e){}}));
+ return out}
 async function fin(){
- if(!S.moteur||!S.moteur.univers) S.moteur=MOTEUR.recommander(pourMoteur(S.declare),S.precisions,{test:TEST,brouillons:false,catalogue:CATALOGUE,conseil:CONSEIL});
+ if(!S.moteur||!S.moteur.univers){
+  const dec=pourMoteur(S.declare),base={test:TEST,brouillons:false,catalogue:CATALOGUE,conseil:CONSEIL};
+  let r=MOTEUR.recommander(dec,S.precisions,base);
+  /* stock en direct : on interroge le site pour les produits susceptibles d'être proposés ; en cas d'échec, on garde la disponibilité du catalogue */
+  const live=await stockDirect(r.univers.flatMap(u=>u.candidats||[]));
+  if(Object.keys(live).length){r=MOTEUR.recommander(dec,S.precisions,{...base,live});r.stockDirect={heure:new Date().toISOString(),produits:Object.keys(live).length}}
+  S.moteur=r}
  try{await DB.put(record())}catch(e){}
  draw();
 }
@@ -279,6 +293,7 @@ function draw(){
  <div class="bloc"><span class="tag m">Allergies et précautions</span><p>Allergies ou intolérances : <b>${esc(g1||'non renseigné')}</b>${S.precisions.G1?' — '+esc(S.precisions.G1):''}.<br><span class="note">Une composition absente ou incomplète n’est jamais présentée comme compatible.</span></p></div>
  ${blocReco()}
  <p class="note">Catalogue de référence : ${CATALOGUE_META.nbProduits} produits, lu le ${esc(CATALOGUE_META.genere)}. Ce diagnostic ne constitue pas un avis médical. Enregistré sur cet appareil.</p>
+ <p class="note noprint">${S.moteur.stockDirect?'Disponibilité vérifiée en direct sur le site à '+new Date(S.moteur.stockDirect.heure).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+'.':'Disponibilité selon le catalogue intégré (connexion au site indisponible).'}</p>
  <div class="bloc noprint"><span class="tag p">Notes complémentaires (usage interne, hors PDF)</span>${obs.length?'<table>'+obs.map(e=>`<tr><td>${esc(e[0])}</td><td>${esc(e[1])}</td></tr>`).join('')+'</table>':'<p class="note">Aucune.</p>'}${S.modifications.length?`<p class="note">${S.modifications.length} modification(s) enregistrée(s).</p>`:''}</div>
  <div class="foot noprint"><button class="btn" id="pdf">Enregistrer en PDF</button> <button class="btn sec" id="nw">Nouveau diagnostic</button></div>`;
  $('#pdf').onclick=()=>window.print();
