@@ -40,7 +40,21 @@ table{border-collapse:collapse;width:100%;font-size:16px}td,th{border-bottom:1px
 .tag.p{background:#8a6a3a}.tag.m{background:#5b5b5b}
 .foot{margin-top:26px;text-align:center}
 a.lk{color:var(--t);cursor:pointer;text-decoration:underline;font-size:15px}
-@media print{header,.nav,.noprint{display:none!important}body{background:#fff;font-size:12pt}main{padding:0;max-width:none}.bloc{break-inside:avoid}}
+@page{size:A4;margin:9mm 10mm}
+@media print{header,.nav,.noprint{display:none!important}
+body{background:#fff;font-size:9.5pt;line-height:1.3}main{padding:0;max-width:none}
+h1{font-size:18pt;margin:2px 0 2px}h2{font-size:12pt!important;margin:4px 0}.sub{font-size:9.5pt;margin:0 0 6px}
+.logo-pr{width:80px!important}
+.bloc{break-inside:auto;padding:6px 10px;margin:0 0 7px;border-radius:8px}
+.bloc.carte{break-inside:avoid;margin:0 0 5px;gap:10px!important;padding:5px 8px}
+.carte img{width:58px!important;height:58px!important}
+.carte>div:first-child{width:22px!important;height:22px!important;line-height:22px!important;font-size:9pt}
+.carte p{font-size:8.5pt!important;margin:1px 0!important}
+.tag{font-size:7pt;padding:1px 6px;margin-bottom:3px}
+table{font-size:8.5pt}td,th{padding:2px 5px}
+.note{font-size:8pt}
+.rep tr{break-inside:avoid}
+}
 </style>
 </head>
 <body>
@@ -200,7 +214,7 @@ function set(key,v,q){
 }
 function carte(p,u,etape,niveau){
  const ind=!p.disponible?'<span class="tag" style="background:#9a3b2e">Indisponible</span> ':'';
- return `<div class="bloc" style="display:flex;gap:14px"><div style="flex:none;width:30px;height:30px;border-radius:50%;background:var(--t);color:#fff;text-align:center;line-height:30px">${etape}</div><img src="${esc(p.image)}" alt="" style="width:96px;height:96px;object-fit:cover;border-radius:10px;flex:none" onerror="this.style.display='none'">
+ return `<div class="bloc carte" style="display:flex;gap:14px"><div style="flex:none;width:30px;height:30px;border-radius:50%;background:var(--t);color:#fff;text-align:center;line-height:30px">${etape}</div><img src="${esc(p.image)}" alt="" style="width:96px;height:96px;object-fit:cover;border-radius:10px;flex:none" onerror="this.style.display='none'">
  <div>${ind}<span class="tag${niveau==='essentiel'?'':' m'}">${niveau==='essentiel'?'Essentiel':'Complémentaire'}</span> <b>${esc(p.titre)}</b><br><span class="note">${esc(p.marque)} · ${esc(p.prix)} €${p.role?' · '+esc(p.role):''}</span>
  <p style="margin:6px 0 4px;font-size:16px">${p.principal?'Répond à votre priorité principale « '+esc(u.principal)+' ».':'Répond à : '+esc(p.secondaires.join(', '))+'.'}</p>
  ${p.usage?`<p class="note" style="margin:0">${esc(p.usage)}</p>`:''}
@@ -239,9 +253,9 @@ function draw(){
  const obs=Object.entries(S.observationsPro).filter(e=>e[1]);
  const g1=S.declare.G1;
  app.innerHTML=`${TEST?'<p class="err noprint"><b>MODE TEST</b> : les données « À confirmer » sont utilisées et signalées. Ne pas remettre ce résultat à une cliente.</p>':''}
- <div style="text-align:center"><img src="logo.png" alt="Maison Diaphane – Diagnostic Beauté" style="width:170px"></div><h1>Votre diagnostic beauté</h1><p class="sub">${esc(((S.client.prenom||'')+' '+(S.client.nom||'')).trim())} · ${new Date(S.debut).toLocaleDateString('fr-FR')}</p>
+ <div style="text-align:center"><img class="logo-pr" src="logo.png" alt="Maison Diaphane – Diagnostic Beauté" style="width:170px"></div><h1>Votre diagnostic beauté</h1><p class="sub">${esc(((S.client.prenom||'')+' '+(S.client.nom||'')).trim())} · ${new Date(S.debut).toLocaleDateString('fr-FR')}</p>
  ${profil()}
- <div class="bloc"><span class="tag">Réponses déclarées</span><table>${lignes}</table></div>
+ <div class="bloc"><span class="tag">Réponses déclarées</span><table class="rep">${lignes}</table></div>
  <div class="bloc"><span class="tag m">Allergies et précautions</span><p>Allergies ou intolérances : <b>${esc(g1||'non renseigné')}</b>${S.precisions.G1?' — '+esc(S.precisions.G1):''}.<br><span class="note">Une composition absente ou incomplète n’est jamais présentée comme compatible.</span></p></div>
  ${blocReco()}
  <p class="note">Catalogue de référence : ${CATALOGUE_META.nbProduits} produits, lu le ${esc(CATALOGUE_META.genere)}. Ce diagnostic ne constitue pas un avis médical. Enregistré sur cet appareil.</p>
